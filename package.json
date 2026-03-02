@@ -1,0 +1,37 @@
+{
+  "name": "mole_chess_web",
+  "version": "1.0.0",
+  "description": "纯前端本地规则引擎版本（`index.html + app.js + local_api.js + game_core.js`）。",
+  "main": "app.js",
+  "scripts": {
+    "test": "npm run test:all",
+    "expo:run": "node expo_dual_window_launcher.mjs",
+    "expo:run:once": "node expo_dual_window_launcher.mjs --open=1",
+    "expo:run:two": "node expo_dual_window_launcher.mjs --open=2",
+    "expo:stop:hint": "node -e \"console.log('按 Ctrl + C 停止 expo 启动脚本；若需释放端口，请关闭占用该端口的进程。')\"",
+    "offline:build": "node scripts/build_offline_release.mjs --platform=all",
+    "offline:build:win": "node scripts/build_offline_release.mjs --platform=win-x64",
+    "offline:build:mac": "node scripts/build_offline_release.mjs --platform=macos-arm64",
+    "offline:build:mac:x64": "node scripts/build_offline_release.mjs --platform=macos-x64",
+    "offline:build:linux": "node scripts/build_offline_release.mjs --platform=linux-x64",
+    "offline:verify": "node scripts/verify_offline_release.mjs --platform=all",
+    "release:expo": "npm run test:p0 && npm run test:expo-ui && npm run offline:build && npm run offline:verify && node scripts/prepare_outgoing_bundle.mjs",
+    "pw:install": "playwright install chromium",
+    "test:p0": "playwright test tests-e2e/p0.ui-smoke.spec.mjs tests-api/p0.core-flow.spec.mjs",
+    "test:p1-ui": "playwright test tests-e2e/p1.piece-visual-state-dom.spec.mjs tests-e2e/p1.editor-v3.spec.mjs tests-e2e/p1.ai-upgrade-ui.spec.mjs tests-e2e/p1.turn-clock-status.spec.mjs tests-e2e/p1.game-over-modal-layer.spec.mjs tests-e2e/p1.overlay-above-board-window.spec.mjs tests-e2e/p1.square-dancer-timing.spec.mjs",
+    "test:p1": "playwright test tests-api/p1.boundary.spec.mjs tests-api/p1.mole-piper.spec.mjs",
+    "test:expo-ui": "playwright test tests-e2e/p1.expo-shared-state.spec.mjs tests-e2e/p1.expo-animation-sync.spec.mjs tests-e2e/p1.expo-entry-initiative-sync.spec.mjs",
+    "test:p2": "playwright test tests-api/p2.soak.spec.mjs",
+    "test:all": "playwright test",
+    "report:last": "node tests-support/reporting/report-last.mjs",
+    "artifacts:prune": "node scripts/prune-artifacts.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.3.0"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "positions": {
+    "synth_open_0": {
+      "best_action": "a0",
+      "value": 0.0,
+      "visits": 1,
+      "updated_at": "2026-02-28T19:33:04Z"
+    },
+    "synth_open_1": {
+      "best_action": "a1",
+      "value": 0.0,
+      "visits": 1,
+      "updated_at": "2026-02-28T19:33:04Z"
+    },
+    "synth_open_2": {
+      "best_action": "a2",
+      "value": 0.0,
+      "visits": 1,
+      "updated_at": "2026-02-28T19:33:04Z"
+    },
+    "synth_open_3": {
+      "best_action": "a3",
+      "value": 0.0,
+      "visits": 1,
+      "updated_at": "2026-02-28T19:33:04Z"
+    },
+    "synth_open_4": {
+      "best_action": "a4",
+      "value": 0.0,
+      "visits": 1,
+      "updated_at": "2026-02-28T19:33:04Z"
+    },
+    "synth_open_5": {
+      "best_action": "a5",
+      "value": 0.0,
+      "visits": 1,
+      "updated_at": "2026-02-28T19:33:04Z"
+    },
+    "synth_open_6": {
+      "best_action": "a6",
+      "value": 0.0,
+      "visits": 1,
+      "updated_at": "2026-02-28T19:33:04Z"
+    },
+    "synth_open_7": {
+      "best_action": "a7",
+      "value": 0.0,
+      "visits": 1,
+      "updated_at": "2026-02-28T19:33:04Z"
+    }
+  },
+  "updated_at": "2026-02-28T19:33:04Z",
+  "opening_max_ply": 10
+}

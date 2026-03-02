@@ -1,0 +1,23 @@
+{
+  "version": "v0.1.0",
+  "date": "2026-02-28T19:33:03Z",
+  "compat": {
+    "engineVersion": "v2",
+    "minGameCoreVersion": 1
+  },
+  "model": {
+    "path": "ai/models/policy_value_v0.onnx",
+    "hash": "sha256:643266109715824d8458f7bb755c8c8162a4d0f8fe01eb2a8713cd79297fe944",
+    "format": "onnx",
+    "quant": "int8"
+  },
+  "training": {
+    "profile": "rtx4070_12gb",
+    "checkpoint": "ai_training/weekly_runs/week_cuda_train_20260301/round_05/checkpoints/policy_value_ema.pt",
+    "exported_at": "2026-02-28T19:33:03Z",
+    "heads": [
+      "policy_logits",
+      "value"
+    ]
+  }
+}

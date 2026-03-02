@@ -1,0 +1,25 @@
+# ===== 不影响线上运行，可忽略上传到 Vercel =====
+__pycache__/
+node_modules/
+ai_training/
+artifacts/
+dev logs/
+docs/
+extracted_docs/
+offline_release/
+prebuilt_runtime/
+scripts/
+simple_vfx_test/
+test-results/
+tests/
+tests-api/
+tests-e2e/
+tests-scenarios/
+tests-support/
+unfinished tasks/
+
+# 本地/测试产物
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

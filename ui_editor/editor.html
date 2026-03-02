@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mole Chess UI Editor V3</title>
+    <link rel="stylesheet" href="editor.css">
+</head>
+
+<body>
+    <div class="editor-shell">
+        <header class="editor-toolbar">
+            <div class="toolbar-left">
+                <label>
+                    Surface
+                    <select id="surface-select"></select>
+                </label>
+                <label>
+                    预览比例
+                    <select id="preview-profile"></select>
+                </label>
+                <label>
+                    自定义宽
+                    <input id="preview-custom-width" type="number" min="240" max="3840" value="1920">
+                </label>
+                <label>
+                    自定义高
+                    <input id="preview-custom-height" type="number" min="240" max="3840" value="1080">
+                </label>
+            </div>
+            <div class="toolbar-right">
+                <label class="inline-check">
+                    <input id="export-with-assets" type="checkbox" checked>
+                    导出带素材
+                </label>
+                <button id="btn-help" class="toolbar-btn">使用说明</button>
+                <button id="btn-guide" class="toolbar-btn">新手引导</button>
+                <button id="btn-save" class="toolbar-btn">保存</button>
+                <button id="btn-apply" class="toolbar-btn primary">应用</button>
+                <button id="btn-backup" class="toolbar-btn">快照</button>
+                <button id="btn-rollback" class="toolbar-btn warning">回滚</button>
+                <button id="btn-export" class="toolbar-btn">导出</button>
+                <button id="btn-import" class="toolbar-btn">导入</button>
+                <input id="import-file-input" type="file" accept="application/json" hidden>
+            </div>
+        </header>
+
+        <main class="editor-main">
+            <aside class="panel panel-left">
+                <section class="list-section">
+                    <h2>元素列表</h2>
+                    <div id="element-list" class="tree-list"></div>
+                </section>
+                <section class="list-section">
+                    <h2>事件列表</h2>
+                    <div id="event-list" class="tree-list"></div>
+                </section>
+                <section class="list-section">
+                    <h2>素材库</h2>
+                    <div class="asset-toolbar">
+                        <select id="asset-kind-upload">
+                            <option value="effect_image">effect_image</option>
+                            <option value="piece_icon">piece_icon</option>
+                            <option value="board_bg">board_bg</option>
+                            <option value="game_bg">game_bg</option>
+                            <option value="entry_bg">entry_bg</option>
+                        </select>
+                        <button id="btn-asset-upload" class="toolbar-btn tiny">上传图片</button>
+                        <input id="asset-upload-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+                    </div>
+                    <div class="asset-toolbar">
+                        <select id="asset-filter-kind">
+                            <option value="all">全部类型</option>
+                            <option value="effect_image">effect_image</option>
+                            <option value="piece_icon">piece_icon</option>
+                            <option value="board_bg">board_bg</option>
+                            <option value="game_bg">game_bg</option>
+                            <option value="entry_bg">entry_bg</option>
+                        </select>
+                        <button id="btn-assets-refresh" class="toolbar-btn tiny">刷新</button>
+                    </div>
+                    <div id="asset-list" class="asset-list"></div>
+                </section>
+                <section class="list-section">
+                    <h2>版本快照</h2>
+                    <select id="version-select"></select>
+                    <input id="backup-note" type="text" placeholder="快照备注（可选）">
+                </section>
+            </aside>
+
+            <section class="panel panel-center">
+                <div class="panel-title-row">
+                    <h2>实时预览</h2>
+                    <div class="preview-actions">
+                        <label class="switch-row inline">
+                            <span>显示 safe-area</span>
+                            <input id="safe-area-toggle" type="checkbox" checked>
+                        </label>
+                        <button id="btn-refresh-preview" class="toolbar-btn tiny">刷新预览</button>
+                    </div>
+                </div>
+                <div id="preview-viewport" class="preview-viewport">
+                    <div id="preview-stage" class="preview-stage">
+                        <iframe id="preview-frame" title="Mole Chess Preview"></iframe>
+                        <div id="preview-safe-area" class="preview-safe-area"></div>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="panel panel-right">
+                <section class="editor-section">
+                    <h2 id="element-editor-title">元素属性</h2>
+                    <div id="property-fields" class="property-fields"></div>
+                </section>
+
+                <section class="editor-section">
+                    <h2>自定义 CSS（当前 Surface）</h2>
+                    <textarea id="custom-css-input" placeholder="例如: .game-title { letter-spacing: 2px; }"></textarea>
+                </section>
+
+                <section class="editor-section">
+                    <h2>背景绑定</h2>
+                    <div class="compact-grid">
+                        <label>entry_bg
+                            <select id="bg-entry-select"></select>
+                        </label>
+                        <label>game_bg
+                            <select id="bg-game-select"></select>
+                        </label>
+                        <label>board_bg
+                            <select id="bg-board-select"></select>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="editor-section">
+                    <h2>棋子 Icon 映射</h2>
+                    <div class="inline-row">
+                        <select id="piece-icon-piece-type"></select>
+                        <select id="piece-icon-team"></select>
+                        <select id="piece-icon-asset"></select>
+                        <button id="btn-piece-icon-bind" class="toolbar-btn tiny">绑定</button>
+                    </div>
+                    <div id="piece-icon-list" class="mapping-list"></div>
+                </section>
+
+                <section class="editor-section">
+                    <h2>常驻摆件（当前 Surface）</h2>
+                    <div class="inline-row">
+                        <select id="scene-placement-asset"></select>
+                        <button id="btn-add-scene-placement" class="toolbar-btn tiny">新增摆件</button>
+                    </div>
+                    <div id="scene-placement-list" class="mapping-list"></div>
+                </section>
+
+                <section class="editor-section">
+                    <h2 id="event-editor-title">事件效果（事件+条件+动作）</h2>
+                    <div class="event-form">
+                        <label class="switch-row">
+                            <span>启用事件</span>
+                            <input id="event-enabled" type="checkbox">
+                        </label>
+                        <label>
+                            条件逻辑
+                            <select id="event-logic">
+                                <option value="AND">AND</option>
+                                <option value="OR">OR</option>
+                            </select>
+                        </label>
+                        <label>
+                            事件冷却(ms)
+                            <input id="event-cooldown" type="number" min="0" max="600000" step="50">
+                        </label>
+                        <div class="subsection-title-row">
+                            <span>条件</span>
+                            <button id="btn-add-condition" class="toolbar-btn tiny">新增条件</button>
+                        </div>
+                        <div id="conditions-list" class="mapping-list"></div>
+                        <div class="subsection-title-row">
+                            <span>动作</span>
+                            <button id="btn-add-action" class="toolbar-btn tiny">新增动作</button>
+                        </div>
+                        <div id="actions-list" class="mapping-list"></div>
+                        <div class="subsection-title-row">
+                            <span>JSON 模式（可覆盖可视化）</span>
+                            <button id="btn-apply-event-json" class="toolbar-btn tiny">应用 JSON</button>
+                        </div>
+                        <textarea id="event-json-input" class="json-area" placeholder='{"enabled":true,"logic":"AND","conditions":[],"actions":[]}'></textarea>
+                    </div>
+                </section>
+            </aside>
+        </main>
+
+        <footer class="editor-footer">
+            <span id="editor-status">就绪</span>
+            <a href="../game.html" target="_blank" rel="noopener">打开对局页</a>
+        </footer>
+    </div>
+
+    <div id="help-modal" class="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+        <div class="help-dialog">
+            <div class="help-header">
+                <strong id="help-title">UI 编辑器快速上手</strong>
+                <div class="inline-row help-actions">
+                    <button id="btn-help-start-guide" class="toolbar-btn tiny primary">开始新手引导</button>
+                    <button id="btn-help-close" class="toolbar-btn tiny warning">关闭</button>
+                </div>
+            </div>
+            <div class="help-body">
+                <section class="help-card">
+                    <h3>3分钟起步</h3>
+                    <ol class="help-list">
+                        <li>先切 `Surface`：`entry` 改首页、`index` 改对局。</li>
+                        <li>点 `素材库` 上传图片，再在 `背景绑定` 里选 `entry/game/board`。</li>
+                        <li>在 `事件列表` 选事件，右侧开启事件并新增条件/动作。</li>
+                        <li>点 `应用` 看中间预览，满意后 `保存`。</li>
+                    </ol>
+                </section>
+                <section class="help-card">
+                    <h3>条件编辑器（新版）</h3>
+                    <ol class="help-list">
+                        <li>先选条件类型，再选操作符。</li>
+                        <li>`exists/not_exists` 不需要填值，会自动隐藏值输入。</li>
+                        <li>`dice` 自动使用数字输入与数值比较操作符。</li>
+                        <li>`in` 会变成标签式多值输入（不用逗号手写）。</li>
+                    </ol>
+                </section>
+                <section class="help-card">
+                    <h3>推荐排错顺序</h3>
+                    <ol class="help-list">
+                        <li>确认当前 `Surface` 对不对。</li>
+                        <li>事件是否 `启用`，条件是否过严。</li>
+                        <li>动作里素材是否存在（删除素材会导致引用失效）。</li>
+                        <li>必要时 `刷新预览`，再看结果。</li>
+                    </ol>
+                </section>
+                <section class="help-card">
+                    <h3>完整说明书</h3>
+                    <p>请查看项目文档：<code>docs/UI_EDITOR_V3_USER_GUIDE.md</code></p>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div id="guide-overlay" class="guide-overlay" aria-hidden="true">
+        <div id="guide-spotlight" class="guide-spotlight"></div>
+        <div id="guide-card" class="guide-card" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+            <div class="guide-card-head">
+                <strong id="guide-title">新手引导</strong>
+                <span id="guide-progress" class="guide-progress">1 / 1</span>
+            </div>
+            <p id="guide-text" class="guide-text"></p>
+            <div class="guide-card-actions">
+                <button id="btn-guide-prev" class="toolbar-btn tiny">上一步</button>
+                <button id="btn-guide-next" class="toolbar-btn tiny primary">下一步</button>
+                <button id="btn-guide-skip" class="toolbar-btn tiny warning">跳过</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../shared/config_store.js"></script>
+    <script src="../shared/asset_store.js"></script>
+    <script src="schema_v3.js"></script>
+    <script src="editor.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>鼹鼠棋</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="ui_editor/custom_theme.css">
+    <link rel="stylesheet" href="pc98_override.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&family=DotGothic16&display=swap"
+        rel="stylesheet">
+</head>
+
+<body data-mc-surface="index">
+    <div id="atmosphere-layer"></div>
+    <div class="app-container">
+        <!-- Windows 98 Top Menu Bar -->
+        <nav class="win98-menubar">
+            <ul class="win98-menu">
+                <li class="win98-menu-header" tabindex="0">
+                    <u>G</u>游戏(G)
+                    <div class="win98-dropdown">
+                        <button id="btn-start-game" class="win98-menu-item">开始游戏</button>
+                        <button id="btn-undo" class="win98-menu-item">悔棋(U)</button>
+                        <div class="win98-menu-separator"></div>
+                        <button id="btn-surrender" class="win98-menu-item">认输(S)</button>
+                        <div class="win98-menu-separator"></div>
+                        <button id="btn-reset" class="win98-menu-item">重置系统(R)</button>
+                        <a href="index.html" class="win98-menu-item" data-return-entry-link="1">返回至主界面(X)</a>
+                    </div>
+                </li>
+                <li class="win98-menu-header" tabindex="0">
+                    <u>V</u>视图(V)
+                    <div class="win98-dropdown">
+                        <button class="win98-menu-item checkbox checked" data-win-toggle="board-window">棋盘窗口(B)</button>
+                        <button class="win98-menu-item checkbox checked" data-win-toggle="status-window">状态看板(S)</button>
+                        <button class="win98-menu-item checkbox checked" data-win-toggle="log-window">系统日志(L)</button>
+                        <button class="win98-menu-item checkbox checked" data-win-toggle="ai-log-window">AI 决策(A)</button>
+                        <button class="win98-menu-item checkbox checked" data-win-toggle="ghost-window">幽灵区(G)</button>
+                        <button class="win98-menu-item checkbox checked"
+                            data-win-toggle="detention-window">拘留区(D)</button>
+                    </div>
+                </li>
+                <li class="win98-menu-header" tabindex="0">
+                    <u>M</u>模式(M)
+                    <div class="win98-dropdown">
+                        <!-- AI Mode -->
+                        <label class="win98-menu-item checkbox"
+                            style="display:flex; justify-content:space-between; align-items:center;">
+                            AI 模式(人机)
+                            <input type="checkbox" id="ai-mode-toggle" style="margin:0;">
+                        </label>
+                        <!-- AI vs AI -->
+                        <label class="win98-menu-item checkbox"
+                            style="display:flex; justify-content:space-between; align-items:center;">
+                            观战模式(AI 对 AI)
+                            <input type="checkbox" id="ai-vs-ai-toggle" style="margin:0;">
+                        </label>
+                        <div id="win98-ai-speed-row" class="win98-menu-item"
+                            style="display:none; align-items:center; justify-content:space-between; gap:8px;">
+                            <span>AI决策时长</span>
+                            <select id="ai-action-speed-select" style="min-width:88px;">
+                                <option value="3000">3秒</option>
+                                <option value="4000">4秒</option>
+                                <option value="5000" selected>5秒 默认</option>
+                                <option value="6000">6秒</option>
+                                <option value="8000">8秒</option>
+                            </select>
+                        </div>
+                        <div class="win98-menu-separator"></div>
+                        <!-- Sandbox -->
+                        <label class="win98-menu-item checkbox"
+                            style="display:flex; justify-content:space-between; align-items:center;">
+                            机制沙盒模式(测试)
+                            <input type="checkbox" id="sandbox-mode-toggle" style="margin:0;">
+                        </label>
+                        <!-- Story -->
+                        <label class="win98-menu-item checkbox"
+                            style="display:flex; justify-content:space-between; align-items:center;">
+                            故事模式(UI开关)
+                            <input type="checkbox" id="story-mode-toggle" style="margin:0;">
+                        </label>
+                    </div>
+                </li>
+                <li class="win98-menu-header" tabindex="0">
+                    <u>S</u>设置(S)
+                    <div class="win98-dropdown">
+                        <!-- Audio Control -->
+                        <button id="btn-mute" class="win98-menu-item">🔊 声音</button>
+                        <div class="win98-menu-item" style="display: flex; align-items: center; gap: 5px;">
+                            <span>音量</span>
+                            <input type="range" id="volume-slider" min="0" max="100" value="50" style="width: 80px;">
+                        </div>
+                        <div class="win98-menu-separator"></div>
+                        <!-- Custom Audio Uploads -->
+                        <label class="win98-menu-item">
+                            <span>上传 BGM...</span><input type="file" id="bgm-upload" accept="audio/*"
+                                style="display:none;">
+                        </label>
+                        <label class="win98-menu-item">
+                            <span>替换 移动音效...</span><input type="file" id="sfx-move-upload" accept="audio/*"
+                                style="display:none;">
+                        </label>
+                        <label class="win98-menu-item">
+                            <span>替换 死神音效...</span><input type="file" id="sfx-death-upload" accept="audio/*"
+                                style="display:none;">
+                        </label>
+                        <label class="win98-menu-item">
+                            <span>替换 技能音效...</span><input type="file" id="sfx-skill-upload" accept="audio/*"
+                                style="display:none;">
+                        </label>
+                    </div>
+                </li>
+                <li class="win98-menu-header" tabindex="0">
+                    <u>R</u>回放(R)
+                    <div class="win98-dropdown">
+                        <button id="btn-replay-records-entry" class="win98-menu-item"
+                            data-proxy-click="btn-replay-records">回放录像记录(V)...</button>
+                    </div>
+                </li>
+                <li class="win98-menu-header" tabindex="0">
+                    <u>H</u>帮助(H)
+                    <div class="win98-dropdown">
+                        <button id="btn-rules-guide" class="win98-menu-item" title="游戏规则指引">游戏规则指引(R)...</button>
+                    </div>
+                </li>
+                <li class="win98-menu-header" tabindex="0">
+                    <u>I</u>界面(I)
+                    <div class="win98-dropdown">
+                        <button class="win98-menu-item" data-menu-style="win98">切换到 Win98 菜单</button>
+                        <button class="win98-menu-item" data-menu-style="pc98">切换到 PC98 菜单</button>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- PC98 Vertical Menu (一级菜单) -->
+        <aside id="pc98-menu-root" class="pc98-menu-root hidden" aria-label="PC98 一级菜单">
+            <button class="pc98-primary-item" data-pc98-open="game">游戏</button>
+            <button class="pc98-primary-item" data-pc98-open="view">视图</button>
+            <button class="pc98-primary-item" data-pc98-open="mode">模式</button>
+            <button class="pc98-primary-item" data-pc98-open="settings">设置</button>
+            <button class="pc98-primary-item" data-pc98-open="replay">回放</button>
+            <button class="pc98-primary-item" data-pc98-open="help">帮助</button>
+            <button class="pc98-primary-item" data-pc98-open="ui">界面</button>
+        </aside>
+
+        <!-- PC98 二级菜单窗口 -->
+        <section id="pc98-submenu-game" class="pc98-submenu-window hidden" data-pc98-window="game">
+            <div class="pc98-submenu-titlebar">
+                <span>游戏菜单</span>
+                <button class="pc98-close-btn" data-pc98-close="game">X</button>
+            </div>
+            <div class="pc98-submenu-content">
+                <button class="pc98-submenu-item" data-proxy-click="btn-start-game">开始游戏</button>
+                <button class="pc98-submenu-item" data-proxy-click="btn-undo">悔棋</button>
+                <button class="pc98-submenu-item" data-proxy-click="btn-surrender">认输</button>
+                <button class="pc98-submenu-item" data-proxy-click="btn-reset">重置系统</button>
+                <a href="index.html" class="pc98-submenu-item" data-return-entry-link="1">返回至主界面</a>
+            </div>
+        </section>
+
+        <section id="pc98-submenu-view" class="pc98-submenu-window hidden" data-pc98-window="view">
+            <div class="pc98-submenu-titlebar">
+                <span>视图菜单</span>
+                <button class="pc98-close-btn" data-pc98-close="view">X</button>
+            </div>
+            <div class="pc98-submenu-content">
+                <button class="pc98-submenu-item checkbox checked" data-win-toggle="board-window">棋盘窗口</button>
+                <button class="pc98-submenu-item checkbox checked" data-win-toggle="status-window">状态看板</button>
+                <button class="pc98-submenu-item checkbox checked" data-win-toggle="log-window">系统日志</button>
+                <button class="pc98-submenu-item checkbox checked" data-win-toggle="ai-log-window">AI 决策</button>
+                <button class="pc98-submenu-item checkbox checked" data-win-toggle="ghost-window">幽灵区</button>
+                <button class="pc98-submenu-item checkbox checked" data-win-toggle="detention-window">拘留区</button>
+            </div>
+        </section>
+
+        <!-- Board Window -->
+        <div id="board-window" class="win98-window show board-window" style="top: 64px; left: 340px; width: fit-content;">
+            <div class="win98-titlebar">
+                <span>棋盘</span>
+                <div class="win98-title-actions">
+                    <button class="win98-min-btn" data-win-minimize="board-window" title="最小化">_</button>
+                    <button class="win98-close-btn"
+                        onclick="document.getElementById('board-window').classList.remove('show'); updateMenuChecks();">X</button>
+                </div>
+            </div>
+            <div class="win98-window-content board-window-content">
+                <div class="board-wrapper">
+                    <div class="board-coordinates-top"></div>
+                    <div class="board-coordinates-left"></div>
+                    <div id="game-board" class="board-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <section id="pc98-submenu-mode" class="pc98-submenu-window hidden mode-persistent-window" data-pc98-window="mode">
+            <div class="pc98-submenu-titlebar">
+                <span>模式菜单</span>
+                <button class="pc98-close-btn" data-pc98-close="mode">X</button>
+            </div>
+            <div class="pc98-submenu-content">
+                <button class="pc98-submenu-item checkbox" data-proxy-toggle="ai-mode-toggle">AI 模式(人机)</button>
+                <button class="pc98-submenu-item checkbox" data-proxy-toggle="ai-vs-ai-toggle">观战模式(AI 对 AI)</button>
+                <div id="pc98-ai-speed-row" class="pc98-submenu-item" style="display:none; cursor:default;">
+                    <label style="display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;">
+                        <span>AI决策时长</span>
+                        <select id="pc98-ai-action-speed-select" style="min-width:88px;">
+                            <option value="3000">3秒</option>
+                            <option value="4000">4秒</option>
+                            <option value="5000" selected>5秒 默认</option>
+                            <option value="6000">6秒</option>
+                            <option value="8000">8秒</option>
+                        </select>
+                    </label>
+                </div>
+                <button class="pc98-submenu-item checkbox" data-proxy-toggle="sandbox-mode-toggle">机制沙盒模式(测试)</button>
+                <button class="pc98-submenu-item checkbox" data-proxy-toggle="story-mode-toggle">故事模式(UI开关)</button>
+            </div>
+        </section>
+
+        <section id="pc98-submenu-replay" class="pc98-submenu-window hidden" data-pc98-window="replay">
+            <div class="pc98-submenu-titlebar">
+                <span>回放菜单</span>
+                <button class="pc98-close-btn" data-pc98-close="replay">X</button>
+            </div>
+            <div class="pc98-submenu-content">
+                <button id="btn-replay-records" class="pc98-submenu-item">回放录像记录</button>
+            </div>
+        </section>
+
+        <section id="pc98-submenu-settings" class="pc98-submenu-window hidden" data-pc98-window="settings">
+            <div class="pc98-submenu-titlebar">
+                <span>设置菜单</span>
+                <button class="pc98-close-btn" data-pc98-close="settings">X</button>
+            </div>
+            <div class="pc98-submenu-content">
+                <button class="pc98-submenu-item" data-proxy-click="btn-mute">声音开关</button>
+                <div class="pc98-volume-row">
+                    <span>音量</span>
+                    <input type="range" id="pc98-volume-slider" min="0" max="100" value="50">
+                </div>
+                <button class="pc98-submenu-item" data-proxy-file="bgm-upload">上传 BGM...</button>
+                <button class="pc98-submenu-item" data-proxy-file="sfx-move-upload">替换 移动音效...</button>
+                <button class="pc98-submenu-item" data-proxy-file="sfx-death-upload">替换 死神音效...</button>
+                <button class="pc98-submenu-item" data-proxy-file="sfx-skill-upload">替换 技能音效...</button>
+            </div>
+        </section>
+
+        <section id="pc98-submenu-help" class="pc98-submenu-window hidden" data-pc98-window="help">
+            <div class="pc98-submenu-titlebar">
+                <span>帮助菜单</span>
+                <button class="pc98-close-btn" data-pc98-close="help">X</button>
+            </div>
+            <div class="pc98-submenu-content">
+                <button class="pc98-submenu-item" data-proxy-click="btn-rules-guide">游戏规则指引</button>
+            </div>
+        </section>
+
+        <section id="pc98-submenu-ui" class="pc98-submenu-window hidden" data-pc98-window="ui">
+            <div class="pc98-submenu-titlebar">
+                <span>界面菜单</span>
+                <button class="pc98-close-btn" data-pc98-close="ui">X</button>
+            </div>
+            <div class="pc98-submenu-content">
+                <button class="pc98-submenu-item" data-menu-style="win98">切换到 Win98 菜单</button>
+                <button class="pc98-submenu-item" data-menu-style="pc98">切换到 PC98 菜单</button>
+            </div>
+        </section>
+
+        <!-- Windows 98 Floating Windows (Extracted from old sidebar panels) -->
+        <!-- Status Window -->
+        <div id="status-window" class="win98-window show" style="top: 40px; left: 10px;">
+            <div class="win98-titlebar">
+                <span>状态看板</span>
+                <button class="win98-close-btn"
+                    onclick="document.getElementById('status-window').classList.remove('show'); updateMenuChecks();">X</button>
+            </div>
+            <div class="win98-window-content">
+                <div class="panel status-panel" data-panel-id="status"
+                    style="border:none!important; padding:0!important; background:transparent!important;">
+                    <div class="status-item">
+                        <span class="label">回合</span>
+                        <span class="value" id="turn-count">--</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">轮到</span>
+                        <span class="value current-turn-spotlight" id="current-turn">--</span>
+                    </div>
+                    <div class="status-group">
+                        <div class="status-group-title">技能剩余回合</div>
+                        <div class="status-item compact">
+                            <span class="label">僧侣修行</span>
+                            <span class="value" id="status-monk-save-remaining">--</span>
+                        </div>
+                        <div class="status-item compact">
+                            <span class="label">僧侣CD</span>
+                            <span class="value" id="status-monk-cd">--</span>
+                        </div>
+                        <div class="status-item compact">
+                            <span class="label">警察拘留</span>
+                            <span class="value" id="status-police-detain-remaining">--</span>
+                        </div>
+                        <div class="status-item compact">
+                            <span class="label">警察CD</span>
+                            <span class="value" id="status-police-cd">--</span>
+                        </div>
+                    </div>
+                    <div class="status-group">
+                        <div class="status-group-title">对局时钟</div>
+                        <div class="status-item compact">
+                            <span class="label">游戏已用时</span>
+                            <span class="value" id="status-game-elapsed">00:00:00</span>
+                        </div>
+                        <div class="status-item compact">
+                            <span class="label">本回合剩余</span>
+                            <span class="value" id="status-turn-remaining">未启用</span>
+                        </div>
+                        <div class="status-item compact clock-control-row">
+                            <span class="label">限时模式</span>
+                            <label class="clock-toggle-label">
+                                <input type="checkbox" id="clock-enabled-toggle">
+                                <span>开启</span>
+                            </label>
+                        </div>
+                        <div class="status-item compact clock-control-row">
+                            <span class="label">每回合时限</span>
+                            <select id="clock-turn-limit-select" class="clock-select">
+                                <option value="30">30秒</option>
+                                <option value="60" selected>60秒</option>
+                                <option value="120">120秒</option>
+                            </select>
+                        </div>
+                        <div class="status-item compact clock-control-row">
+                            <span class="label">闹钟阈值</span>
+                            <select id="clock-alarm-threshold-select" class="clock-select">
+                                <option value="5">5分钟</option>
+                                <option value="10" selected>10分钟</option>
+                                <option value="20">20分钟</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="legend-area">
+                        <div class="legend-item"><span class="legend-dot special-green"></span> 绿叶妻</div>
+                        <div class="legend-item"><span class="legend-dot special-nightmare"></span> 夜魔</div>
+                        <div class="legend-item"><span class="legend-dot special-grave"></span> 墓碑</div>
+                        <div class="legend-item"><span class="legend-dot special-ghost"></span> 幽灵</div>
+                        <div class="legend-item"><span class="legend-dot special-stack"></span> 堆叠</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Log Window -->
+        <div id="log-window" class="win98-window show" style="top: 40px; right: 10px; left: auto; width: 300px;">
+            <div class="win98-titlebar">
+                <span>系统日志</span>
+                <button class="win98-close-btn"
+                    onclick="document.getElementById('log-window').classList.remove('show'); updateMenuChecks();">X</button>
+            </div>
+            <div class="win98-window-content">
+                <div class="panel log-panel" data-panel-id="log"
+                    style="border:none!important; padding:0!important; background:transparent!important;">
+                    <div id="game-log" class="log-content">
+                        <div class="log-entry">系统初始化完成...</div>
+                        <div class="log-entry">等待连接...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Log Window -->
+        <div id="ai-log-window" class="win98-window show" style="top: 250px; right: 10px; left: auto; width: 300px;">
+            <div class="win98-titlebar">
+                <span>AI 决策日志</span>
+                <button class="win98-close-btn"
+                    onclick="document.getElementById('ai-log-window').classList.remove('show'); updateMenuChecks();">X</button>
+            </div>
+            <div class="win98-window-content">
+                <div class="panel ai-log-panel" data-panel-id="aiLog"
+                    style="border:none!important; padding:0!important; background:transparent!important;">
+                    <div class="ai-log-controls">
+                        <button id="ai-log-copy" class="cyber-btn tiny" style="margin-bottom: 5px;">复制日志</button>
+                    </div>
+                    <div id="ai-debug-panel" class="ai-debug-panel">
+                        <div class="ai-debug-row">Engine: <span id="ai-debug-engine">--</span></div>
+                        <div class="ai-debug-row">Model: <span id="ai-debug-model">--</span></div>
+                        <div class="ai-debug-row">Build: <span id="ai-debug-build">--</span></div>
+                        <div class="ai-debug-row">Neural: <span id="ai-debug-neural">--</span></div>
+                        <div class="ai-debug-row">Fallbacks: <span id="ai-debug-fallback">0</span></div>
+                        <div class="ai-debug-row">Avg Think: <span id="ai-debug-think">0ms</span></div>
+                        <div class="ai-debug-row">Skill Rate: <span id="ai-debug-skill-rate">0%</span></div>
+                        <div class="ai-debug-row muted">最近 50 步摘要</div>
+                        <div id="ai-debug-decisions" class="ai-debug-decisions"></div>
+                    </div>
+                    <div id="ai-log-list" class="ai-log-list">
+                        <div class="ai-log-entry">AI 日志面板已就绪</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ghost Window -->
+        <div id="ghost-window" class="win98-window show" style="bottom: 10px; top: auto; left: 10px; width: 250px;">
+            <div class="win98-titlebar">
+                <span>幽灵区</span>
+                <button class="win98-close-btn"
+                    onclick="document.getElementById('ghost-window').classList.remove('show'); updateMenuChecks();">X</button>
+            </div>
+            <div class="win98-window-content">
+                <div class="panel ghost-panel" data-panel-id="ghost"
+                    style="border:none!important; padding:0!important; background:transparent!important;">
+                    <div id="ghost-container" class="ghost-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detention Window -->
+        <div id="detention-window" class="win98-window show"
+            style="bottom: 10px; top: auto; right: 10px; left: auto; width: 250px;">
+            <div class="win98-titlebar">
+                <span>拘留区</span>
+                <button class="win98-close-btn"
+                    onclick="document.getElementById('detention-window').classList.remove('show'); updateMenuChecks();">X</button>
+            </div>
+            <div class="win98-window-content">
+                <div class="panel detention-panel" data-panel-id="detention"
+                    style="border:none!important; padding:0!important; background:transparent!important;">
+                    <div id="detention-container" class="detention-grid">
+                        <div class="empty-hint" style="color: #666; font-size: 11px; grid-column: 1/-1;">暂无被拘捕的棋子</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <main class="game-area">
+            <div id="mobile-window-dock" class="mobile-window-dock hidden" aria-label="移动端窗口切换"></div>
+            <div id="mobile-rotate-overlay" class="mobile-rotate-overlay hidden" aria-hidden="true">
+                <div class="mobile-rotate-overlay__text">旋转屏幕至横屏体验更佳</div>
+            </div>
+            <!-- Hidden elements keeping DOM intact -->
+            <button id="mobile-menu-toggle" class="mobile-menu-toggle hidden" style="display:none!important;">☰</button>
+            <div id="sidebar-overlay" class="sidebar-overlay hidden" style="display:none!important;"></div>
+            <button id="sidebar-collapsed-handle" class="sidebar-collapsed-handle hidden"
+                style="display:none!important;" title="展开侧边栏">☰</button>
+
+            <!-- Rules Guide Modal -->
+            <div id="modal-rules-guide" class="modal-overlay hidden">
+                <div class="modal-content rules-guide-content win98-rules-window">
+                    <div class="win98-titlebar rules-guide-titlebar">
+                        <span>游戏规则指引</span>
+                        <button class="win98-close-btn"
+                            onclick="document.getElementById('modal-rules-guide').classList.add('hidden')">X</button>
+                    </div>
+                    <div class="win98-window-content rules-guide-body">
+                        <h2>鼹鼠棋规则速查</h2>
+
+                        <div class="rules-section">
+                            <h3>胜负条件</h3>
+                            <ul>
+                                <li><strong>吃光敌方所有市民</strong> -> 获胜</li>
+                                <li><strong>吃掉敌方孩子</strong> -> 获胜</li>
+                                <li>任何一方都无法满足上述条件 -> 和棋</li>
+                                <li>死神连续三次摇到0 -> 全部清场，和棋</li>
+                            </ul>
+                        </div>
+
+                        <div class="rules-section">
+                            <h3>骰子系统</h3>
+                            <ul>
+                                <li>双骰00-99系统（十位+个位）</li>
+                                <li>对子（11, 22...）可再掷一次</li>
+                                <li>00为终极效果（永久/全场）</li>
+                                <li>大部分技能：50-99成功，01-49失败</li>
+                            </ul>
+                        </div>
+
+                        <div class="rules-section">
+                            <h3>核心规则</h3>
+                            <ul>
+                                <li>每回合先判定死神移动，再进行己方操作</li>
+                                <li>使用技能后本回合不能移动棋子</li>
+                                <li>技能冷却时间为1回合</li>
+                                <li>墓碑可阻挡棋子移动，但孩子可翻墓</li>
+                                <li>被死神吃掉的棋子变幽灵，不留墓碑</li>
+                            </ul>
+                        </div>
+
+                        <div class="rules-section">
+                            <h3>关键棋子</h3>
+                            <ul>
+                                <li><strong>市民</strong>：向前1格（首步可2格），吃斜后方</li>
+                                <li><strong>警察</strong>：全能移动，可抓捕/枪决夜魔和魔笛手</li>
+                                <li><strong>官员</strong>：L型移动，死亡后警察无法移动</li>
+                                <li><strong>叶某</strong>：满足3条件后变身夜魔（无限碾压）</li>
+                                <li><strong>孩子</strong>：被吃即输，可翻墓（学红歌后失去）</li>
+                            </ul>
+                        </div>
+
+                        <div class="rules-section">
+                            <h3>变身条件（叶某->夜魔）</h3>
+                            <ol>
+                                <li>妻子已附身市民（绿叶妻状态）</li>
+                                <li>孩子学会唱红歌（红叶儿状态）</li>
+                                <li>叶某到达敌方阵地（底线两行）</li>
+                            </ol>
+                        </div>
+                        <div class="rules-actions">
+                            <button class="rules-close-btn"
+                                onclick="document.getElementById('modal-rules-guide').classList.add('hidden')">关闭</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Replay Records Modal -->
+            <div id="modal-replay-records" class="modal-overlay hidden">
+                <div class="modal-content rules-guide-content win98-rules-window replay-records-modal">
+                    <div class="win98-titlebar rules-guide-titlebar">
+                        <span>回放录像记录</span>
+                        <button class="win98-close-btn"
+                            onclick="document.getElementById('modal-replay-records').classList.add('hidden')">X</button>
+                    </div>
+                    <div class="win98-window-content replay-records-body">
+                        <div class="replay-records-toolbar">
+                            <button id="btn-replay-refresh" class="rules-close-btn">刷新</button>
+                            <button id="btn-replay-clear-all" class="rules-close-btn">清空记录</button>
+                        </div>
+                        <div id="replay-records-list" class="replay-records-list"></div>
+                        <div class="rules-actions">
+                            <button class="rules-close-btn"
+                                onclick="document.getElementById('modal-replay-records').classList.add('hidden')">关闭</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UI Overlays -->
+
+            <!-- 1. Start Game Modal -->
+            <div id="modal-start-game" class="modal-overlay hidden">
+                <div class="modal-content">
+                    <h2>欢迎来到鼹鼠棋</h2>
+                    <p style="margin-bottom: 20px; color: #888;">系统连接中...</p>
+
+                    <!-- Initiative Result Area -->
+                    <div id="initiative-result" class="hidden" style="margin-top: 20px;">
+                        <div style="font-size: 14px; margin-bottom: 5px;">先手掷骰</div>
+                        <div style="display: flex; justify-content: center; gap: 20px;">
+                            <div>黑方: <span id="init-roll-black"
+                                    style="color:var(--grid-color); font-weight:bold;">-</span></div>
+                            <div>白方: <span id="init-roll-white" style="color:#fff; font-weight:bold;">-</span></div>
+                        </div>
+                        <div id="init-winner-msg" style="margin-top: 10px; color: var(--accent-color);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Piece Context Menu -->
+            <div id="piece-context-menu" class="context-menu hidden">
+                <button id="ctx-btn-move" class="ctx-btn">
+                    <span class="ctx-icon">♟</span>
+                    <span class="ctx-label">移动棋子</span>
+                </button>
+                <button id="ctx-btn-capture" class="ctx-btn">
+                    <span class="ctx-icon">⚔</span>
+                    <span class="ctx-label">吃子</span>
+                </button>
+                <button id="ctx-btn-skill" class="ctx-btn">
+                    <span class="ctx-icon">⚡</span>
+                    <span class="ctx-label">发动技能</span>
+                </button>
+                <button id="ctx-btn-stack" class="ctx-btn">
+                    <span class="ctx-icon">🧱</span>
+                    <span class="ctx-label">堆叠</span>
+                </button>
+                <button id="ctx-btn-info" class="ctx-btn">
+                    <span class="ctx-icon">ℹ</span>
+                    <span class="ctx-label">棋子说明</span>
+                </button>
+            </div>
+
+            <!-- 3. Piece Info Modal -->
+            <div id="modal-piece-info" class="modal-overlay hidden">
+                <div class="modal-content info-card">
+                    <button class="close-btn">×</button>
+                    <h2 id="info-title">棋子名称</h2>
+                    <div class="info-body">
+                        <p><strong>特性:</strong> <span id="info-desc">...</span></p>
+                        <p><strong>移动:</strong> <span id="info-moves">...</span></p>
+                        <p><strong>技能:</strong> <span id="info-skills">...</span></p>
+                        <p><strong>备注:</strong> <span id="info-notes">...</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Skill Result Display -->
+            <div id="skill-result-display" class="skill-result-display hidden">
+                <div id="skill-result-text" class="skill-result-text"></div>
+            </div>
+
+            <!-- 4.5 Game Over Modal -->
+            <div id="modal-game-over" class="modal-overlay hidden">
+                <div class="modal-content game-over-modal">
+                    <h2 id="game-over-winner">🏆 胜利！</h2>
+                    <p id="game-over-reason" style="color: #aaa; margin: 20px 0;"></p>
+                    <p id="game-over-replay-status" style="color:#9bc0cc; margin: 0 0 14px 0; font-size: 12px;">录像准备中...</p>
+                    <div class="game-over-actions" style="display: flex; gap: 12px; justify-content: center; flex-wrap:wrap;">
+                        <button id="btn-save-replay" class="cyber-btn">💾 保存录像</button>
+                        <button class="cyber-btn special" onclick="restartGame()">🔄 再来一局</button>
+                        <button class="cyber-btn"
+                            onclick="document.getElementById('modal-game-over').classList.add('hidden')">关闭</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Citizen Upgrade Modal (市民升变选择) -->
+            <div id="modal-citizen-upgrade" class="modal-overlay hidden">
+                <div class="modal-content">
+                    <h2>🎖️ 市民升变</h2>
+                    <p style="color: #888; margin-bottom: 20px;">市民到达敌方底线！请选择升变目标：</p>
+                    <div class="upgrade-options">
+                        <button class="upgrade-btn" onclick="selectUpgrade('police')">
+                            <span class="upgrade-icon">警</span>
+                            <span class="upgrade-name">警察</span>
+                        </button>
+                        <button class="upgrade-btn" onclick="selectUpgrade('officer')">
+                            <span class="upgrade-icon">官</span>
+                            <span class="upgrade-name">官员</span>
+                        </button>
+                        <button class="upgrade-btn" onclick="selectUpgrade('lawyer')">
+                            <span class="upgrade-icon">律</span>
+                            <span class="upgrade-name">律师</span>
+                        </button>
+                        <button class="upgrade-btn" onclick="selectUpgrade('teacher')">
+                            <span class="upgrade-icon">师</span>
+                            <span class="upgrade-name">老师</span>
+                        </button>
+                        <button class="upgrade-btn" onclick="selectUpgrade('doctor')">
+                            <span class="upgrade-icon">医</span>
+                            <span class="upgrade-name">医生</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dice Interface -->
+            <div id="dice-container" class="dice-interface hidden">
+                <div class="dice-box">
+                    <div id="dice-tens" class="d10">0</div>
+                    <div class="dice-label">十位</div>
+                </div>
+                <div class="dice-box">
+                    <div id="dice-units" class="d10">0</div>
+                    <div class="dice-label">个位</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <audio id="sfx-move" src="static/uploads/data_pion-st2-footstep-sfx-323055.mp3"></audio>
+    <audio id="sfx-death" src="static/uploads/alex_jauk-haunted-mystery-sound-428183.mp3"></audio>
+    <audio id="sfx-skill" src="static/uploads/freesound_crunchpixstudio-hero-skill-attack-reveal-3-384974.mp3"></audio>
+    <audio id="sfx-dice" src=""></audio>
+    <audio id="bgm-player" loop></audio>
+    <div id="transition-mask"
+        style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000;z-index:9999;opacity:0;pointer-events:none;transition:opacity 0.8s steps(4, end);">
+    </div>
+
+    <script>
+        (function applyOfflineFreshReset() {
+            const params = new URLSearchParams(window.location.search || '');
+            if (params.get('fresh') !== '1') return;
+            const keys = [
+                'mole_chess_theme_pack_v3',
+                'mole_chess_effects_pack_v3',
+                'mole_chess_ui_assets_manifest_v1',
+                'mole_chess_theme_pack_v2',
+                'mole_chess_effects_pack_v2',
+                'mole_chess_theme_css',
+                'mole_chess_effects_config',
+                'mole_chess_menu_style',
+                'mole_chess_ui_layout_config'
+            ];
+            for (const key of keys) {
+                try { localStorage.removeItem(key); } catch (_e) { }
+            }
+        })();
+    </script>
+    <script>
+        (function initReturnToEntryTransition() {
+            const returnLinks = Array.from(document.querySelectorAll('[data-return-entry-link="1"]'));
+            if (!returnLinks.length) return;
+            let entryNavigating = false;
+
+            function resolveEntryUrl() {
+                const params = new URLSearchParams(window.location.search || '');
+                const entryParams = new URLSearchParams();
+                if (params.get('expo') === '1') entryParams.set('expo', '1');
+                if (params.get('guide') === '1') entryParams.set('guide', '1');
+                if (params.get('fresh') === '1') entryParams.set('fresh', '1');
+                const query = entryParams.toString();
+                return `index.html${query ? `?${query}` : ''}`;
+            }
+
+            function navigateWithTransition(targetUrl) {
+                if (entryNavigating) return;
+                entryNavigating = true;
+                const mask = document.getElementById('transition-mask');
+                if (!mask) {
+                    window.location.href = targetUrl;
+                    return;
+                }
+                mask.style.opacity = '1';
+                let flashes = 0;
+                const flashInterval = setInterval(() => {
+                    mask.style.background = flashes % 2 === 0 ? '#fff' : '#000';
+                    flashes++;
+                    if (flashes > 4) {
+                        clearInterval(flashInterval);
+                        mask.style.background = '#000';
+                        setTimeout(() => {
+                            window.location.href = targetUrl;
+                        }, 400);
+                    }
+                }, 80);
+            }
+
+            function handleReturnClick(event) {
+                if (!event) return;
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                event.preventDefault();
+                navigateWithTransition(resolveEntryUrl());
+            }
+
+            const entryUrl = resolveEntryUrl();
+            for (const link of returnLinks) {
+                link.setAttribute('href', entryUrl);
+                link.addEventListener('click', handleReturnClick);
+            }
+        })();
+    </script>
+    <script src="piece_data.js"></script>
+    <script src="game_core.js"></script>
+    <script src="ai/ai_config_store.js"></script>
+    <script src="ai/ai_telemetry_store.js"></script>
+    <script src="local_api.js"></script>
+    <script src="shared/asset_store.js"></script>
+    <script src="ui_editor/schema_v3.js"></script>
+    <script src="ui_editor/effects_engine.js"></script>
+    <script src="shared/config_store.js"></script>
+    <script src="app.js?v=2"></script>
+</body>
+
+</html>

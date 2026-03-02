@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>鼹鼠棋</title>
+    <link rel="stylesheet" href="pc98_override.css">
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pc98-black: #000000;
+            --pc98-white: #ffffff;
+            --pc98-red: #ff0000;
+            --pc98-blue: #0000ff;
+            --pc98-cyan: #00ffff;
+            --pc98-yellow: #ffff00;
+            --pc98-green: #00ff00;
+            --pc98-magenta: #ff00ff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--pc98-black);
+            background-image: none;
+            color: var(--pc98-white);
+            font-family: 'Zpix', 'DotGothic16', 'SimSun', 'NSimSun', monospace;
+            -webkit-font-smoothing: none;
+            font-smooth: never;
+            text-rendering: crispEdges;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 800px;
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid var(--pc98-blue);
+            box-shadow: inset 0 0 10px var(--pc98-blue), 0 0 15px var(--pc98-blue);
+        }
+
+        .title-small {
+            color: var(--pc98-red);
+            font-size: 24px;
+            letter-spacing: 5px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .title-main {
+            font-size: 150px;
+            color: var(--pc98-red);
+            text-shadow: 4px 4px 0px rgba(255, 0, 0, 0.5),
+                -2px -2px 0px var(--pc98-white);
+            margin: 0;
+            line-height: 1;
+            letter-spacing: 15px;
+            font-weight: bold;
+        }
+
+        .title-sub {
+            color: var(--pc98-red);
+            font-size: 28px;
+            margin-top: 10px;
+            margin-bottom: 80px;
+            letter-spacing: 20px;
+        }
+
+        .menu-options {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-top: 20px;
+        }
+
+        .menu-btn {
+            background-color: var(--pc98-white);
+            color: var(--pc98-black);
+            font-family: 'Zpix', 'SimSun', 'NSimSun', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            padding: 10px 40px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            -webkit-font-smoothing: none;
+            font-smooth: never;
+            text-rendering: crispEdges;
+        }
+
+        .menu-btn::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border: 2px solid var(--pc98-black);
+            pointer-events: none;
+        }
+
+        .menu-btn:hover {
+            background-color: var(--pc98-yellow);
+            color: var(--pc98-black);
+            animation: mc-entry-tv-btn-flicker 420ms steps(6, end) 1;
+            box-shadow: 0 0 0 2px #000, 0 0 12px rgba(255, 255, 255, 0.75), 0 0 24px rgba(0, 255, 255, 0.35);
+        }
+
+        .menu-btn::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 2px;
+            background: linear-gradient(90deg,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.95) 35%,
+                    rgba(0, 255, 255, 0.95) 50%,
+                    rgba(255, 255, 255, 0.95) 65%,
+                    rgba(255, 255, 255, 0) 100%);
+            transform: translateY(-50%) scaleY(0.08);
+            opacity: 0;
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
+
+        .menu-btn:hover::after {
+            animation: mc-entry-tv-power-on 420ms steps(6, end) 1;
+        }
+
+        @keyframes mc-entry-tv-power-on {
+            0% {
+                opacity: 0.95;
+                transform: translateY(-50%) scaleY(0.06);
+            }
+
+            35% {
+                opacity: 1;
+                transform: translateY(-50%) scaleY(0.18);
+            }
+
+            65% {
+                opacity: 0.7;
+                transform: translateY(-50%) scaleY(0.8);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-50%) scaleY(1.4);
+            }
+        }
+
+        @keyframes mc-entry-tv-btn-flicker {
+            0% {
+                filter: brightness(1.7) contrast(1.35);
+            }
+
+            25% {
+                filter: brightness(0.92) contrast(1.1);
+            }
+
+            50% {
+                filter: brightness(1.35) contrast(1.25);
+            }
+
+            75% {
+                filter: brightness(0.98) contrast(1.05);
+            }
+
+            100% {
+                filter: brightness(1) contrast(1);
+            }
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom,
+                    rgba(255, 255, 255, 0),
+                    rgba(255, 255, 255, 0) 50%,
+                    rgba(0, 0, 0, 0.2) 50%,
+                    rgba(0, 0, 0, 0.2));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .rules-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.78);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 6000;
+        }
+
+        .rules-modal-overlay.hidden {
+            display: none;
+        }
+
+        .rules-modal {
+            width: min(760px, 94vw);
+            max-height: 84vh;
+            background: #c0c0c0;
+            border-top: 2px solid #ffffff;
+            border-left: 2px solid #ffffff;
+            border-right: 2px solid #808080;
+            border-bottom: 2px solid #808080;
+            box-shadow: 1px 1px 0 #000000;
+            color: #000;
+            overflow: hidden;
+        }
+
+        .rules-modal-titlebar {
+            background: #000080;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2px 6px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .rules-modal-close {
+            width: 16px;
+            height: 14px;
+            background: #c0c0c0;
+            color: #000;
+            border-top: 1px solid #ffffff;
+            border-left: 1px solid #ffffff;
+            border-right: 1px solid #808080;
+            border-bottom: 1px solid #808080;
+            font-size: 10px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .rules-modal-body {
+            background: #d4d0c8;
+            max-height: calc(84vh - 24px);
+            overflow-y: auto;
+            padding: 10px;
+            line-height: 1.45;
+            font-size: 13px;
+        }
+
+        .rules-modal-body h2 {
+            margin: 2px 0 10px 0;
+            border-bottom: 1px solid #808080;
+            padding-bottom: 6px;
+            color: #000080;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .rules-section {
+            margin-bottom: 10px;
+            padding: 8px 10px;
+            border: 1px inset #808080;
+            background: #ffffff;
+        }
+
+        .rules-section h3 {
+            color: #000080;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .rules-section ul,
+        .rules-section ol {
+            margin-left: 18px;
+        }
+
+        .rules-section strong {
+            color: #8b0000;
+        }
+
+        .rules-actions {
+            margin-top: 8px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .rules-close-btn {
+            min-width: 92px;
+            background: #c0c0c0;
+            color: #000;
+            border-top: 1px solid #ffffff;
+            border-left: 1px solid #ffffff;
+            border-right: 1px solid #808080;
+            border-bottom: 1px solid #808080;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+
+        /* Entry micro-horror visuals (text glitch + random pulse/noise background) */
+        .mc-entry-static-noise {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.4;
+            z-index: 90;
+            background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+            background-size: 420px 420px;
+            filter: contrast(1.35);
+            animation: mc-entry-noise-flicker 0.28s steps(3, end) infinite;
+            transition: opacity 0.08s linear;
+        }
+
+        .mc-entry-static-noise.mc-entry-noise-off {
+            opacity: 0;
+            animation-play-state: paused;
+        }
+
+        @keyframes mc-entry-noise-flicker {
+            0% {
+                background-position: 0 0;
+            }
+
+            50% {
+                background-position: 100% 100%;
+            }
+
+            100% {
+                background-position: -50% 50%;
+            }
+        }
+
+        .mc-entry-glitch {
+            position: relative;
+            animation: mc-entry-glitch-main 0.32s steps(8, end) 1;
+            will-change: transform, clip-path, text-shadow;
+        }
+
+        .mc-entry-glitch-menu {
+            position: relative;
+            animation: mc-entry-glitch-menu 0.28s steps(6, end) 1;
+            will-change: text-shadow, filter;
+        }
+
+        .mc-entry-glitch-xpos {
+            --mc-gx: 3px;
+            --mc-gy: 1px;
+            text-shadow: 2px 0 #ff0000, -1px 0 #00ffff;
+        }
+
+        .mc-entry-glitch-xneg {
+            --mc-gx: -3px;
+            --mc-gy: -1px;
+            text-shadow: -2px 0 #ff0000, 1px 0 #00ffff;
+        }
+
+        .mc-entry-glitch-ypos {
+            --mc-gx: 1px;
+            --mc-gy: 3px;
+            text-shadow: 0 2px #ff0000, 0 -1px #00ffff;
+        }
+
+        .mc-entry-glitch-yneg {
+            --mc-gx: -1px;
+            --mc-gy: -3px;
+            text-shadow: 0 -2px #ff0000, 0 1px #00ffff;
+        }
+
+        @keyframes mc-entry-glitch-main {
+            0% {
+                clip-path: inset(12% 0 76% 0);
+                transform: translate(calc(var(--mc-gx, 0px) * 0.5), calc(var(--mc-gy, 0px) * 0.5));
+            }
+
+            25% {
+                clip-path: inset(72% 0 10% 0);
+                transform: translate(calc(var(--mc-gx, 0px) * -0.8), calc(var(--mc-gy, 0px) * 0.8));
+            }
+
+            50% {
+                clip-path: inset(40% 0 34% 0);
+                transform: translate(calc(var(--mc-gx, 0px) * 1), calc(var(--mc-gy, 0px) * -1));
+            }
+
+            75% {
+                clip-path: inset(18% 0 60% 0);
+                transform: translate(calc(var(--mc-gx, 0px) * -1), calc(var(--mc-gy, 0px) * -0.6));
+            }
+
+            100% {
+                clip-path: inset(0 0 0 0);
+                transform: translate(0, 0);
+            }
+        }
+
+        @keyframes mc-entry-glitch-menu {
+            0% {
+                filter: none;
+            }
+
+            33% {
+                filter: contrast(1.1);
+            }
+
+            66% {
+                filter: contrast(1.2) saturate(1.2);
+            }
+
+            100% {
+                filter: none;
+            }
+        }
+    </style>
+</head>
+
+<body data-mc-surface="entry">
+    <nav class="win98-menubar">
+        <ul class="win98-menu">
+            <li class="win98-menu-header" tabindex="0">
+                <u>G</u>游戏(G)
+                <div class="win98-dropdown">
+                    <a id="menu-start-game-link" href="game.html" class="win98-menu-item" style="text-decoration: none;"
+                        onclick="return handleStartGameClick(event, 'menu_start_click')">开始游戏</a>
+                    <div class="win98-menu-separator"></div>
+                    <a href="#" onclick="alert('即将退出...')" class="win98-menu-item"
+                        style="text-decoration: none;">退出(X)</a>
+                </div>
+            </li>
+            <li class="win98-menu-header" tabindex="0">
+                <u>H</u>帮助(H)
+                <div class="win98-dropdown">
+                    <a href="#" onclick="alert('说明: 鼹鼠棋 PC-98 版.')" class="win98-menu-item"
+                        style="text-decoration: none;">关于(A)...</a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+
+    <div id="mc-entry-static-noise" class="mc-entry-static-noise" aria-hidden="true"></div>
+    <div class="scanlines"></div>
+    <div class="container">
+        <div class="title-small">mole chess</div>
+        <h1 class="title-main">鼹鼠棋</h1>
+        <div class="title-sub">PC-98 EDITION</div>
+
+        <div class="menu-options">
+            <a id="hero-start-game-link" href="game.html" class="menu-btn" onclick="return handleStartGameClick(event, 'hero_start_click')">开始</a>
+            <a href="#" class="menu-btn" onclick="openRulesModal(event)">说明</a>
+        </div>
+    </div>
+
+    <div id="rules-modal-overlay" class="rules-modal-overlay hidden" aria-hidden="true">
+        <div class="rules-modal" role="dialog" aria-modal="true" aria-labelledby="rules-modal-title">
+            <div class="rules-modal-titlebar">
+                <span id="rules-modal-title">游戏规则指引</span>
+                <button class="rules-modal-close" type="button" onclick="closeRulesModal()">X</button>
+            </div>
+            <div class="rules-modal-body">
+                <h2>鼹鼠棋规则速查</h2>
+
+                <div class="rules-section">
+                    <h3>胜负条件</h3>
+                    <ul>
+                        <li><strong>吃光敌方所有市民</strong> -> 获胜</li>
+                        <li><strong>吃掉敌方孩子</strong> -> 获胜</li>
+                        <li>任何一方都无法满足上述条件 -> 和棋</li>
+                        <li>死神连续三次摇到0 -> 全部清场，和棋</li>
+                    </ul>
+                </div>
+
+                <div class="rules-section">
+                    <h3>骰子系统</h3>
+                    <ul>
+                        <li>双骰00-99系统（十位+个位）</li>
+                        <li>对子（11, 22...）可再掷一次</li>
+                        <li>00为终极效果（永久/全场）</li>
+                        <li>大部分技能：50-99成功，01-49失败</li>
+                    </ul>
+                </div>
+
+                <div class="rules-section">
+                    <h3>核心规则</h3>
+                    <ul>
+                        <li>每回合先判定死神移动，再进行己方操作</li>
+                        <li>使用技能后本回合不能移动棋子</li>
+                        <li>技能冷却时间为1回合</li>
+                        <li>墓碑可阻挡棋子移动，但孩子可翻墓</li>
+                        <li>被死神吃掉的棋子变幽灵，不留墓碑</li>
+                    </ul>
+                </div>
+
+                <div class="rules-section">
+                    <h3>关键棋子</h3>
+                    <ul>
+                        <li><strong>市民</strong>：向前1格（首步可2格），吃斜后方</li>
+                        <li><strong>警察</strong>：全能移动，可抓捕/枪决夜魔和魔笛手</li>
+                        <li><strong>官员</strong>：L型移动，死亡后警察无法移动</li>
+                        <li><strong>叶某</strong>：满足3条件后变身夜魔（无限碾压）</li>
+                        <li><strong>孩子</strong>：被吃即输，可翻墓（学红歌后失去）</li>
+                    </ul>
+                </div>
+
+                <div class="rules-section">
+                    <h3>变身条件（叶某->夜魔）</h3>
+                    <ol>
+                        <li>妻子已附身市民（绿叶妻状态）</li>
+                        <li>孩子学会唱红歌（红叶儿状态）</li>
+                        <li>叶某到达敌方阵地（底线两行）</li>
+                    </ol>
+                </div>
+
+                <div class="rules-actions">
+                    <button class="rules-close-btn" type="button" onclick="closeRulesModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="transition-mask"
+        style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000;z-index:9999;opacity:0;pointer-events:none;transition:opacity 0.8s steps(4, end);">
+    </div>
+
+    <script>
+        (function applyOfflineFreshReset() {
+            const params = new URLSearchParams(window.location.search || '');
+            if (params.get('fresh') !== '1') return;
+            const keys = [
+                'mole_chess_theme_pack_v3',
+                'mole_chess_effects_pack_v3',
+                'mole_chess_ui_assets_manifest_v1',
+                'mole_chess_theme_pack_v2',
+                'mole_chess_effects_pack_v2',
+                'mole_chess_theme_css',
+                'mole_chess_effects_config',
+                'mole_chess_menu_style',
+                'mole_chess_ui_layout_config'
+            ];
+            for (const key of keys) {
+                try { localStorage.removeItem(key); } catch (_e) { }
+            }
+        })();
+    </script>
+    <script src="shared/asset_store.js"></script>
+    <script src="ui_editor/schema_v3.js"></script>
+    <script src="ui_editor/effects_engine.js"></script>
+
+    <script>
+        function triggerEntryEvent(eventId, context = {}) {
+            if (window.MoleChessEffects && typeof window.MoleChessEffects.triggerEvent === 'function') {
+                window.MoleChessEffects.triggerEvent(eventId, Object.assign({
+                    surface: 'entry',
+                    timestamp: new Date().toISOString()
+                }, context));
+            }
+        }
+
+        (function initEntryMicroHorrorFx() {
+            const randInt = (min, max) => {
+                const lo = Math.floor(min);
+                const hi = Math.floor(max);
+                return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+            };
+
+            const noiseLayer = document.getElementById('mc-entry-static-noise');
+            if (noiseLayer) {
+                const blinkLoop = () => {
+                    const delay = randInt(4500, 9000);
+                    setTimeout(() => {
+                        noiseLayer.classList.add('mc-entry-noise-off');
+                        setTimeout(() => {
+                            noiseLayer.classList.remove('mc-entry-noise-off');
+                            blinkLoop();
+                        }, 500);
+                    }, delay);
+                };
+                blinkLoop();
+            }
+
+            const glitchCandidates = [
+                ...Array.from(document.querySelectorAll('.title-sub')).map(el => ({ el, isMenu: false })),
+                ...Array.from(document.querySelectorAll('.win98-menubar .win98-menu-header, .win98-menubar .win98-menu-item'))
+                    .filter(el => !el.closest('.menu-options'))
+                    .map(el => ({ el, isMenu: true }))
+            ];
+
+            const directionClasses = [
+                'mc-entry-glitch-xpos',
+                'mc-entry-glitch-xneg',
+                'mc-entry-glitch-ypos',
+                'mc-entry-glitch-yneg'
+            ];
+
+            const active = new Set();
+
+            const triggerGlitchWave = () => {
+                const available = glitchCandidates.filter(item => !active.has(item.el));
+                if (!available.length) return;
+
+                const desiredCount = Math.random() < 0.65 ? 1 : 2;
+                if (desiredCount > 1 && available.length < 2) return;
+
+                const count = Math.min(desiredCount, available.length);
+                const selected = [];
+                while (selected.length < count) {
+                    const next = available[randInt(0, available.length - 1)];
+                    if (!selected.includes(next)) selected.push(next);
+                }
+
+                const usedDirections = new Set();
+                for (const item of selected) {
+                    const el = item.el;
+                    const freeDirections = directionClasses.filter(cls => !usedDirections.has(cls));
+                    const direction = freeDirections.length
+                        ? freeDirections[randInt(0, freeDirections.length - 1)]
+                        : null;
+
+                    if (!direction) continue;
+                    usedDirections.add(direction);
+                    active.add(el);
+                    const glitchClass = item.isMenu ? 'mc-entry-glitch-menu' : 'mc-entry-glitch';
+                    el.classList.add(glitchClass, direction);
+
+                    const duration = randInt(180, 420);
+                    setTimeout(() => {
+                        el.classList.remove(glitchClass, direction);
+                        active.delete(el);
+                    }, duration);
+                }
+            };
+
+            const glitchLoop = () => {
+                const nextDelay = randInt(500, 1800);
+                setTimeout(() => {
+                    triggerGlitchWave();
+                    glitchLoop();
+                }, nextDelay);
+            };
+
+            setTimeout(() => {
+                triggerGlitchWave();
+            }, 280);
+            glitchLoop();
+        })();
+
+        function openRulesModal(e) {
+            if (e) e.preventDefault();
+            const overlay = document.getElementById('rules-modal-overlay');
+            if (!overlay) return;
+            overlay.classList.remove('hidden');
+            overlay.setAttribute('aria-hidden', 'false');
+            triggerEntryEvent('entry_open_rules', { element: overlay, cause: 'user_click' });
+        }
+
+        function closeRulesModal() {
+            const overlay = document.getElementById('rules-modal-overlay');
+            if (!overlay) return;
+            overlay.classList.add('hidden');
+            overlay.setAttribute('aria-hidden', 'true');
+            triggerEntryEvent('entry_close_rules', { element: overlay, cause: 'user_close' });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeRulesModal();
+        });
+
+        document.getElementById('rules-modal-overlay')?.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'rules-modal-overlay') {
+                closeRulesModal();
+            }
+        });
+
+        function pc98Transition(e, targetUrl) {
+            e.preventDefault();
+            if (String(targetUrl).includes('game.html')) {
+                triggerEntryEvent('entry_start_click', { cause: 'start_game_click' });
+            }
+            const mask = document.getElementById('transition-mask');
+            mask.style.opacity = '1';
+
+            let flashes = 0;
+            const flashInterval = setInterval(() => {
+                mask.style.background = flashes % 2 === 0 ? '#fff' : '#000';
+                flashes++;
+                if (flashes > 4) {
+                    clearInterval(flashInterval);
+                    mask.style.background = '#000';
+                    setTimeout(() => {
+                        window.location.href = targetUrl;
+                    }, 400);
+                }
+            }, 80);
+        }
+
+        const ENTRY_SYNC_CHANNEL_NAME = 'mole_chess_entry_sync_v1';
+        const ENTRY_SYNC_STORAGE_KEY = 'mole_chess_entry_sync_v1';
+        const entrySyncWindowId = `entry_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        let entrySyncChannel = null;
+        let entryNavigating = false;
+
+        function resolveGameEntryUrl() {
+            const params = new URLSearchParams(window.location.search || '');
+            const gameParams = new URLSearchParams();
+            if (params.get('expo') === '1') gameParams.set('expo', '1');
+            if (params.get('guide') === '1') gameParams.set('guide', '1');
+            if (params.get('fresh') === '1') gameParams.set('fresh', '1');
+            const query = gameParams.toString();
+            return `game.html${query ? `?${query}` : ''}`;
+        }
+
+        function applyGameEntryLinks() {
+            const gameUrl = resolveGameEntryUrl();
+            const menuLink = document.getElementById('menu-start-game-link');
+            const heroLink = document.getElementById('hero-start-game-link');
+            if (menuLink) menuLink.setAttribute('href', gameUrl);
+            if (heroLink) heroLink.setAttribute('href', gameUrl);
+        }
+
+        function navigateToGameWithTransition(targetUrl) {
+            if (entryNavigating) return;
+            entryNavigating = true;
+            const mask = document.getElementById('transition-mask');
+            if (!mask) {
+                window.location.href = targetUrl;
+                return;
+            }
+            mask.style.opacity = '1';
+            let flashes = 0;
+            const flashInterval = setInterval(() => {
+                mask.style.background = flashes % 2 === 0 ? '#fff' : '#000';
+                flashes++;
+                if (flashes > 4) {
+                    clearInterval(flashInterval);
+                    mask.style.background = '#000';
+                    setTimeout(() => {
+                        window.location.href = targetUrl;
+                    }, 400);
+                }
+            }, 80);
+        }
+
+        function emitEntryStartSync(targetUrl, cause) {
+            const payload = {
+                type: 'entry_start_game',
+                targetUrl: String(targetUrl || ''),
+                writerId: entrySyncWindowId,
+                cause: String(cause || ''),
+                at: Date.now()
+            };
+            if (entrySyncChannel && typeof entrySyncChannel.postMessage === 'function') {
+                try { entrySyncChannel.postMessage(payload); } catch (_e) { }
+            }
+            try {
+                localStorage.setItem(ENTRY_SYNC_STORAGE_KEY, JSON.stringify(payload));
+            } catch (_e) { }
+        }
+
+        function handleIncomingEntrySync(payload) {
+            if (!payload || payload.type !== 'entry_start_game') return;
+            if (String(payload.writerId || '') === entrySyncWindowId) return;
+            const url = String(payload.targetUrl || '');
+            if (!url || !url.includes('game.html')) return;
+            navigateToGameWithTransition(url);
+        }
+
+        function setupEntrySync() {
+            const params = new URLSearchParams(window.location.search || '');
+            if (params.get('expo') !== '1') return;
+            if (typeof BroadcastChannel === 'function') {
+                try {
+                    entrySyncChannel = new BroadcastChannel(ENTRY_SYNC_CHANNEL_NAME);
+                    entrySyncChannel.onmessage = (event) => {
+                        handleIncomingEntrySync(event && event.data ? event.data : null);
+                    };
+                } catch (_e) {
+                    entrySyncChannel = null;
+                }
+            }
+            window.addEventListener('storage', (event) => {
+                if (event.key !== ENTRY_SYNC_STORAGE_KEY || !event.newValue) return;
+                try {
+                    handleIncomingEntrySync(JSON.parse(event.newValue));
+                } catch (_e) { }
+            });
+        }
+
+        function handleStartGameClick(event, cause) {
+            if (event) event.preventDefault();
+            const targetUrl = resolveGameEntryUrl();
+            triggerEntryEvent('entry_start_click', { cause: cause || 'start_game_click' });
+            emitEntryStartSync(targetUrl, cause || 'start_game_click');
+            navigateToGameWithTransition(targetUrl);
+            return false;
+        }
+
+        applyGameEntryLinks();
+        setupEntrySync();
+    </script>
+</body>
+
+</html>
