@@ -2566,7 +2566,7 @@ body.state-perm-night #atmosphere-layer {
 }
 
 body.mobile-mode .mobile-window-dock {
-    display: flex;
+    display: none !important;
 }
 
 body.mobile-mode .mobile-window-managed:not(.show) {
@@ -2614,31 +2614,6 @@ body.mobile-mode .pc98-menu-root {
 
     body.mobile-mode .board-window.centered-viewport {
         --window-centered-offset-y: -15px;
-    }
-
-    body.mobile-landscape {
-        --cell-size: clamp(15px, min(4.8vh, 5.2vw), 26px);
-    }
-
-    body.mobile-landscape .board-window {
-        max-height: calc(100vh - 158px - env(safe-area-inset-bottom, 0px)) !important;
-    }
-
-    body.mobile-landscape #log-window.show {
-        left: max(6px, env(safe-area-inset-left, 0px)) !important;
-        right: max(6px, env(safe-area-inset-right, 0px)) !important;
-        top: auto !important;
-        bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
-        width: auto !important;
-        z-index: 9050 !important;
-    }
-
-    body.mobile-landscape #log-window .win98-window-content {
-        max-height: min(25vh, 146px) !important;
-    }
-
-    body.mobile-landscape #log-window .log-content {
-        max-height: min(17vh, 92px) !important;
     }
 
     body.mobile-mode .board-window .win98-window-content {

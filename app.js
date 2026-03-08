@@ -520,23 +520,36 @@ document.addEventListener('DOMContentLoaded', () => {
         return isMobileViewport() && window.matchMedia('(orientation: portrait)').matches;
     }
 
+    function getMobileWindowTopOffset() {
+        if (!document.body.classList.contains('mobile-mode')) return 48;
+        const vvTop = window.visualViewport ? Math.max(0, Math.round(window.visualViewport.offsetTop || 0)) : 0;
+        const minTop = 6 + vvTop;
+        const maxTop = 36 + vvTop;
+        const menuStyle = String(document.body.getAttribute('data-menu-style') || 'win98');
+        let preferredTop = minTop;
+
+        if (menuStyle === 'pc98') {
+            const root = document.getElementById('pc98-menu-root');
+            if (root) {
+                const rect = root.getBoundingClientRect();
+                preferredTop = Math.max(preferredTop, Math.round(rect.top + 4));
+            }
+        } else {
+            const win98Bar = document.querySelector('.win98-menubar');
+            if (win98Bar) {
+                const rect = win98Bar.getBoundingClientRect();
+                preferredTop = Math.max(preferredTop, Math.round(rect.bottom + 4));
+            }
+        }
+        return Math.max(minTop, Math.min(maxTop, preferredTop));
+    }
+
     function getMobileBoardCenterOffsetY() {
         if (!document.body.classList.contains('mobile-mode')) return 0;
         if (!document.body.classList.contains('mobile-landscape')) {
             return MOBILE_BOARD_CENTER_OFFSET_Y;
         }
-        const viewportHeight = Math.max(320, window.innerHeight || 0);
-        const hasLogWindow = !!(logWindowEl && logWindowEl.classList.contains('show'));
-        if (!hasLogWindow) {
-            return MOBILE_BOARD_CENTER_OFFSET_Y - 10;
-        }
-        const topSafe = 56;
-        const reservedLogHeight = Math.max(108, Math.min(170, Math.round(viewportHeight * 0.30)));
-        const usableTop = topSafe + 6;
-        const usableBottom = Math.max(usableTop + 140, viewportHeight - reservedLogHeight - 8);
-        const targetCenter = (usableTop + usableBottom) / 2;
-        const offsetY = Math.round(targetCenter - (viewportHeight / 2));
-        return Math.max(-140, Math.min(-8, offsetY));
+        return MOBILE_BOARD_CENTER_OFFSET_Y - 12;
     }
 
     function placeBoardWindowForMobileCentered(options = {}) {
@@ -544,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const preserveManual = !!options.preserveManual;
         const hasManualPos = boardWindowEl.dataset.mobileDragged === '1';
         if (preserveManual && hasManualPos) {
-            ensureWindowVisibleWithinViewport(boardWindowEl, { topOffset: 52 });
+            ensureWindowVisibleWithinViewport(boardWindowEl, { topOffset: getMobileWindowTopOffset() });
             return;
         }
         const optionOffsetY = Number(options.offsetY);
@@ -562,7 +575,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function ensureWindowVisibleWithinViewport(winEl, options = {}) {
         if (!winEl || !winEl.classList.contains('show')) return;
         const margin = Number.isFinite(Number(options.margin)) ? Number(options.margin) : 8;
-        const topOffset = Number.isFinite(Number(options.topOffset)) ? Number(options.topOffset) : 48;
+        const fallbackTopOffset = document.body.classList.contains('mobile-mode') ? getMobileWindowTopOffset() : 48;
+        const topOffset = Number.isFinite(Number(options.topOffset)) ? Number(options.topOffset) : fallbackTopOffset;
         const rect = winEl.getBoundingClientRect();
         const maxLeft = Math.max(margin, window.innerWidth - winEl.offsetWidth - margin);
         const maxTop = Math.max(topOffset, window.innerHeight - winEl.offsetHeight - margin);
@@ -595,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (windowId === 'board-window' && document.body.classList.contains('mobile-mode')) {
                         placeBoardWindowForMobileCentered({ preserveManual: false });
                     } else {
-                        ensureWindowVisibleWithinViewport(winEl, { topOffset: 52 });
+                        ensureWindowVisibleWithinViewport(winEl, { topOffset: getMobileWindowTopOffset() });
                     }
                 }
                 if (typeof window.updateMenuChecks === 'function') {
@@ -634,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
             winEl.classList.toggle('show', shouldShow);
             winEl.classList.add('mobile-window-managed');
             if (shouldShow) {
-                ensureWindowVisibleWithinViewport(winEl, { topOffset: 52 });
+                ensureWindowVisibleWithinViewport(winEl, { topOffset: getMobileWindowTopOffset() });
             }
         });
         closePc98Submenus();
@@ -677,8 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        buildMobileWindowDockIfNeeded();
-        if (elMobileWindowDock) elMobileWindowDock.classList.remove('hidden');
+        if (elMobileWindowDock) elMobileWindowDock.classList.add('hidden');
 
         if (!mobileResponsiveActive) {
             applyMobileDefaultWindowState();
@@ -690,19 +703,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (logWindowEl && logWindowEl.classList.contains('show')) {
-            ensureWindowVisibleWithinViewport(logWindowEl, { topOffset: 52 });
+            ensureWindowVisibleWithinViewport(logWindowEl, { topOffset: getMobileWindowTopOffset() });
         }
         if (statusWindowEl && statusWindowEl.classList.contains('show')) {
-            ensureWindowVisibleWithinViewport(statusWindowEl, { topOffset: 52 });
+            ensureWindowVisibleWithinViewport(statusWindowEl, { topOffset: getMobileWindowTopOffset() });
         }
         if (aiLogWindowEl && aiLogWindowEl.classList.contains('show')) {
-            ensureWindowVisibleWithinViewport(aiLogWindowEl, { topOffset: 52 });
+            ensureWindowVisibleWithinViewport(aiLogWindowEl, { topOffset: getMobileWindowTopOffset() });
         }
         if (ghostWindowEl && ghostWindowEl.classList.contains('show')) {
-            ensureWindowVisibleWithinViewport(ghostWindowEl, { topOffset: 52 });
+            ensureWindowVisibleWithinViewport(ghostWindowEl, { topOffset: getMobileWindowTopOffset() });
         }
         if (detentionWindowEl && detentionWindowEl.classList.contains('show')) {
-            ensureWindowVisibleWithinViewport(detentionWindowEl, { topOffset: 52 });
+            ensureWindowVisibleWithinViewport(detentionWindowEl, { topOffset: getMobileWindowTopOffset() });
         }
         if (typeof window.updateMenuChecks === 'function') {
             window.updateMenuChecks();
@@ -805,7 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
             boardWindowEl.style.right = 'auto';
             boardWindowEl.style.bottom = 'auto';
             boardWindowEl.dataset.mobileDragged = '1';
-            ensureWindowVisibleWithinViewport(boardWindowEl, { topOffset: 52 });
+            ensureWindowVisibleWithinViewport(boardWindowEl, { topOffset: getMobileWindowTopOffset() });
         }, { passive: false });
 
         const finishBoardLongPressDrag = (e) => {
@@ -856,7 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
             winEl.style.right = 'auto';
             winEl.style.bottom = 'auto';
             if (document.body.classList.contains('mobile-mode')) {
-                ensureWindowVisibleWithinViewport(winEl, { topOffset: 52 });
+                ensureWindowVisibleWithinViewport(winEl, { topOffset: getMobileWindowTopOffset() });
             }
         };
         const endDrag = () => {
@@ -931,7 +944,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const margin = 8;
             const maxLeft = Math.max(margin, window.innerWidth - winEl.offsetWidth - margin);
             const maxTop = Math.max(margin, window.innerHeight - winEl.offsetHeight - margin);
-            const topOffset = document.body.classList.contains('mobile-mode') ? 52 : margin;
+            const topOffset = document.body.classList.contains('mobile-mode') ? getMobileWindowTopOffset() : margin;
             const nextLeft = Math.max(margin, Math.min(origX + dx, maxLeft));
             const nextTop = Math.max(topOffset, Math.min(origY + dy, Math.max(topOffset, maxTop)));
             winEl.style.left = `${nextLeft}px`;
