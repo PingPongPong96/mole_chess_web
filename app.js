@@ -86,9 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnReplayClearAll = document.getElementById('btn-replay-clear-all');
     const aiConfigStore = window.MoleChessAIConfigStore || null;
     const aiTelemetryStore = window.MoleChessAITelemetryStore || null;
+    const MOBILE_BREAKPOINT = 1024;
+    const MOBILE_BOARD_CENTER_OFFSET_Y = -15;
+    const MOBILE_BOARD_LONG_PRESS_DELAY_MS = 450;
+    const MOBILE_BOARD_LONG_PRESS_CANCEL_PX = 10;
+    const MOBILE_BOARD_CLICK_SUPPRESS_MS = 550;
 
     function checkMobile() {
-        return window.innerWidth <= 800; // Matches CSS media query
+        return window.innerWidth < MOBILE_BREAKPOINT;
     }
 
     // Toggle Logic
@@ -150,6 +155,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const MOBILE_MANAGED_WINDOWS = Object.keys(MOBILE_WINDOW_LABELS);
     let mobileResponsiveActive = false;
     let previousMenuStyleBeforeMobile = null;
+    let suppressBoardCellClickUntil = 0;
+    const mobileBoardLongPressState = {
+        timer: null,
+        tracking: false,
+        dragging: false,
+        startX: 0,
+        startY: 0,
+        origX: 0,
+        origY: 0
+    };
 
     const MENU_STYLE_STORAGE_KEY = 'mole_chess_menu_style';
     const PC98_PERSISTENT_SUBMENU_KEYS = new Set(['mode']);
@@ -466,7 +481,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         placeStatusWindowNearPc98Menu(true);
                     }
                     if (targetId === 'board-window') {
-                        placeBoardWindowDefault(true);
+                        if (document.body.classList.contains('mobile-mode')) {
+                            placeBoardWindowForMobileCentered({ preserveManual: false });
+                        } else {
+                            placeBoardWindowDefault(true);
+                        }
                     }
                 }
             }
@@ -494,11 +513,50 @@ document.addEventListener('DOMContentLoaded', () => {
     window.updateMenuChecks();
 
     function isMobileViewport() {
-        return window.innerWidth < 768;
+        return window.innerWidth < MOBILE_BREAKPOINT;
     }
 
     function isMobilePortrait() {
         return isMobileViewport() && window.matchMedia('(orientation: portrait)').matches;
+    }
+
+    function getMobileBoardCenterOffsetY() {
+        if (!document.body.classList.contains('mobile-mode')) return 0;
+        if (!document.body.classList.contains('mobile-landscape')) {
+            return MOBILE_BOARD_CENTER_OFFSET_Y;
+        }
+        const viewportHeight = Math.max(320, window.innerHeight || 0);
+        const hasLogWindow = !!(logWindowEl && logWindowEl.classList.contains('show'));
+        if (!hasLogWindow) {
+            return MOBILE_BOARD_CENTER_OFFSET_Y - 10;
+        }
+        const topSafe = 56;
+        const reservedLogHeight = Math.max(108, Math.min(170, Math.round(viewportHeight * 0.30)));
+        const usableTop = topSafe + 6;
+        const usableBottom = Math.max(usableTop + 140, viewportHeight - reservedLogHeight - 8);
+        const targetCenter = (usableTop + usableBottom) / 2;
+        const offsetY = Math.round(targetCenter - (viewportHeight / 2));
+        return Math.max(-140, Math.min(-8, offsetY));
+    }
+
+    function placeBoardWindowForMobileCentered(options = {}) {
+        if (!boardWindowEl || !boardWindowEl.classList.contains('show')) return;
+        const preserveManual = !!options.preserveManual;
+        const hasManualPos = boardWindowEl.dataset.mobileDragged === '1';
+        if (preserveManual && hasManualPos) {
+            ensureWindowVisibleWithinViewport(boardWindowEl, { topOffset: 52 });
+            return;
+        }
+        const optionOffsetY = Number(options.offsetY);
+        const targetOffsetY = Number.isFinite(optionOffsetY) ? optionOffsetY : getMobileBoardCenterOffsetY();
+        boardWindowEl.classList.add('centered-viewport');
+        boardWindowEl.style.left = '';
+        boardWindowEl.style.top = '';
+        boardWindowEl.style.right = 'auto';
+        boardWindowEl.style.bottom = 'auto';
+        boardWindowEl.style.transform = '';
+        boardWindowEl.style.setProperty('--window-centered-offset-y', `${targetOffsetY}px`);
+        boardWindowEl.dataset.mobileDragged = '0';
     }
 
     function ensureWindowVisibleWithinViewport(winEl, options = {}) {
@@ -534,7 +592,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const willShow = !winEl.classList.contains('show');
                 winEl.classList.toggle('show', willShow);
                 if (willShow) {
-                    ensureWindowVisibleWithinViewport(winEl, { topOffset: 52 });
+                    if (windowId === 'board-window' && document.body.classList.contains('mobile-mode')) {
+                        placeBoardWindowForMobileCentered({ preserveManual: false });
+                    } else {
+                        ensureWindowVisibleWithinViewport(winEl, { topOffset: 52 });
+                    }
                 }
                 if (typeof window.updateMenuChecks === 'function') {
                     window.updateMenuChecks();
@@ -601,6 +663,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const winEl = document.getElementById(windowId);
                 if (winEl) winEl.classList.remove('mobile-window-managed');
             });
+            if (boardWindowEl) {
+                boardWindowEl.style.removeProperty('--window-centered-offset-y');
+                boardWindowEl.dataset.mobileDragged = '0';
+            }
             if (previousMenuStyleBeforeMobile === 'pc98') {
                 previousMenuStyleBeforeMobile = null;
                 applyMenuStyle('pc98', false);
@@ -620,12 +686,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (boardWindowEl && boardWindowEl.classList.contains('show')) {
-            boardWindowEl.classList.add('centered-viewport');
-            boardWindowEl.style.left = '';
-            boardWindowEl.style.top = '';
-            boardWindowEl.style.right = 'auto';
-            boardWindowEl.style.bottom = 'auto';
-            boardWindowEl.style.transform = '';
+            placeBoardWindowForMobileCentered({ preserveManual: true });
         }
 
         if (logWindowEl && logWindowEl.classList.contains('show')) {
@@ -656,6 +717,110 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => applyResponsiveLayoutState(), 60);
     });
     applyResponsiveLayoutState();
+
+    function clearMobileBoardLongPressTimer() {
+        if (mobileBoardLongPressState.timer) {
+            clearTimeout(mobileBoardLongPressState.timer);
+            mobileBoardLongPressState.timer = null;
+        }
+    }
+
+    function resetMobileBoardLongPressState() {
+        clearMobileBoardLongPressTimer();
+        mobileBoardLongPressState.tracking = false;
+        mobileBoardLongPressState.dragging = false;
+    }
+
+    function isMobileBoardLongPressTarget(target) {
+        if (!target) return false;
+        if (!target.closest('#board-window .board-wrapper')) return false;
+        if (target.closest('.piece')) return false;
+        if (target.closest('.stack-indicator')) return false;
+        if (target.closest('.win98-titlebar')) return false;
+        if (target.closest('.win98-close-btn') || target.closest('.win98-min-btn')) return false;
+        return true;
+    }
+
+    function beginMobileBoardLongPressDrag(clientX, clientY) {
+        if (!boardWindowEl) return;
+        if (boardWindowEl.classList.contains('centered-viewport')) {
+            const rect = boardWindowEl.getBoundingClientRect();
+            boardWindowEl.classList.remove('centered-viewport');
+            boardWindowEl.style.left = `${rect.left}px`;
+            boardWindowEl.style.top = `${rect.top}px`;
+            boardWindowEl.style.right = 'auto';
+            boardWindowEl.style.bottom = 'auto';
+            boardWindowEl.style.transform = '';
+        }
+        const rect = boardWindowEl.getBoundingClientRect();
+        mobileBoardLongPressState.dragging = true;
+        mobileBoardLongPressState.origX = rect.left;
+        mobileBoardLongPressState.origY = rect.top;
+        mobileBoardLongPressState.startX = clientX;
+        mobileBoardLongPressState.startY = clientY;
+        document.querySelectorAll('.win98-window').forEach(w => w.style.zIndex = '2000');
+        boardWindowEl.style.zIndex = '2001';
+    }
+
+    function setupMobileBoardLongPressDrag() {
+        if (!boardWindowEl || boardWindowEl.dataset.mobileLongPressReady === '1') return;
+        boardWindowEl.dataset.mobileLongPressReady = '1';
+
+        boardWindowEl.addEventListener('touchstart', (e) => {
+            if (!document.body.classList.contains('mobile-mode')) return;
+            if (!e.touches || e.touches.length !== 1) return;
+            const touch = e.touches[0];
+            if (!touch) return;
+            if (!isMobileBoardLongPressTarget(e.target)) {
+                resetMobileBoardLongPressState();
+                return;
+            }
+            resetMobileBoardLongPressState();
+            mobileBoardLongPressState.tracking = true;
+            mobileBoardLongPressState.startX = touch.clientX;
+            mobileBoardLongPressState.startY = touch.clientY;
+            const pressStartX = touch.clientX;
+            const pressStartY = touch.clientY;
+            mobileBoardLongPressState.timer = setTimeout(() => {
+                if (!mobileBoardLongPressState.tracking || mobileBoardLongPressState.dragging) return;
+                beginMobileBoardLongPressDrag(pressStartX, pressStartY);
+            }, MOBILE_BOARD_LONG_PRESS_DELAY_MS);
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!mobileBoardLongPressState.tracking) return;
+            const touch = e.touches && e.touches[0];
+            if (!touch) return;
+            const dx = touch.clientX - mobileBoardLongPressState.startX;
+            const dy = touch.clientY - mobileBoardLongPressState.startY;
+            if (!mobileBoardLongPressState.dragging) {
+                if (Math.abs(dx) > MOBILE_BOARD_LONG_PRESS_CANCEL_PX || Math.abs(dy) > MOBILE_BOARD_LONG_PRESS_CANCEL_PX) {
+                    resetMobileBoardLongPressState();
+                }
+                return;
+            }
+            e.preventDefault();
+            boardWindowEl.style.left = `${mobileBoardLongPressState.origX + dx}px`;
+            boardWindowEl.style.top = `${mobileBoardLongPressState.origY + dy}px`;
+            boardWindowEl.style.right = 'auto';
+            boardWindowEl.style.bottom = 'auto';
+            boardWindowEl.dataset.mobileDragged = '1';
+            ensureWindowVisibleWithinViewport(boardWindowEl, { topOffset: 52 });
+        }, { passive: false });
+
+        const finishBoardLongPressDrag = (e) => {
+            if (!mobileBoardLongPressState.tracking) return;
+            if (mobileBoardLongPressState.dragging) {
+                suppressBoardCellClickUntil = Date.now() + MOBILE_BOARD_CLICK_SUPPRESS_MS;
+                if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            resetMobileBoardLongPressState();
+        };
+
+        document.addEventListener('touchend', finishBoardLongPressDrag, { passive: false });
+        document.addEventListener('touchcancel', finishBoardLongPressDrag, { passive: false });
+    }
+    setupMobileBoardLongPressDrag();
 
     // Win98 Dragging
     document.querySelectorAll('.win98-titlebar').forEach(bar => {
@@ -4259,6 +4424,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function onCellClick(e) {
+        if (document.body.classList.contains('mobile-mode') && Date.now() < suppressBoardCellClickUntil) return;
         if (!state || state.phase !== 'PLAYING' || state.game_over) return;
 
         // Close context menu if open

@@ -873,7 +873,11 @@ body[data-menu-style="win98"] .pc98-submenu-window {
     color: #003d1a !important;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
+    body.mobile-landscape {
+        --cell-size: clamp(15px, min(4.8vh, 5.2vw), 26px) !important;
+    }
+
     body.mobile-mode .win98-window {
         min-width: 0 !important;
         max-width: calc(100vw - 14px) !important;
@@ -884,6 +888,27 @@ body[data-menu-style="win98"] .pc98-submenu-window {
         min-width: 0 !important;
         max-width: calc(100vw - 8px) !important;
         max-height: calc(100vh - 62px - env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    body.mobile-landscape .board-window {
+        max-height: calc(100vh - 158px - env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    body.mobile-landscape #log-window.show {
+        left: max(6px, env(safe-area-inset-left, 0px)) !important;
+        right: max(6px, env(safe-area-inset-right, 0px)) !important;
+        top: auto !important;
+        bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+        width: auto !important;
+        z-index: 9050 !important;
+    }
+
+    body.mobile-landscape #log-window .win98-window-content {
+        max-height: min(25vh, 146px) !important;
+    }
+
+    body.mobile-landscape #log-window .log-content {
+        max-height: min(17vh, 92px) !important;
     }
 
     body.mobile-mode .win98-menubar {
